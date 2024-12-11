@@ -1,0 +1,68 @@
+<!DOCTYPE html> 
+<html lang="es"> 
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>Comentarios en Tiempo Real</title> 
+<script 
+src="https://unpkg.com/rxjs@7.5.0/dist/bundles/rxjs.umd.js"></script> 
+<style> 
+body { font-family: Arial, sans-serif; margin: 20px; } 
+input, button { margin: 5px; } 
+.comentario { margin: 10px 0; padding: 10px; border: 1px solid #ddd; 
+border-radius: 5px; } 
+</style> 
+</head> 
+<body> 
+<h1>Comentarios en Tiempo Real</h1> 
+<form id="formulario"> 
+<input type="text" id="nombre" placeholder="Tu nombre" required> 
+<input type="email" id="email" placeholder="Tu correo electrónico" 
+required> 
+<input type="text" id="comentario" placeholder="Tu comentario" required> 
+<button type="submit">Enviar</button> 
+</form> 
+<h2>Comentarios:</h2> 
+<div id="lista-comentarios"></div> 
+<script> 
+const form = document.getElementById('formulario'); 
+const listaComentarios = document.getElementById('lista-comentarios'); 
+// Observable para cargar comentarios 
+const cargarComentarios$ = new rxjs.Observable(subscriber => { 
+fetch('http://localhost:3000/comentarios') 
+.then(response => response.json()) 
+.then(data => { 
+subscriber.next(data); 
+subscriber.complete(); 
+}) 
+.catch(err => subscriber.error(err)); 
+}); 
+// Mostrar comentarios 
+function mostrarComentarios(comentarios) { 
+listaComentarios.innerHTML = comentarios.map(c => ` 
+<div class="comentario"> 
+<strong>${c.nombre}</strong> (${c.email}): ${c.comentario} 
+</div> 
+`).join(''); 
+} 
+// Suscribirse para cargar comentarios al inicio 
+cargarComentarios$.subscribe(mostrarComentarios); 
+// Evento para enviar un comentario 
+form.addEventListener('submit', event => { 
+event.preventDefault(); 
+const nuevoComentario = { 
+nombre: form.nombre.value, 
+email: form.email.value, 
+comentario: form.comentario.value, 
+}; 
+fetch('http://localhost:3000/comentarios', { 
+method: 'POST', 
+headers: { 'Content-Type': 'application/json' }, 
+body: JSON.stringify(nuevoComentario), 
+}) 
+.then(() => cargarComentarios$.subscribe(mostrarComentarios)) 
+.catch(err => alert('Error al enviar comentario')); 
+}); 
+</script> 
+</body> 
+</html>
